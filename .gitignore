@@ -1,0 +1,46 @@
+# Ignore project-specific configuration files created by IntelliJ IDEA
+*.iml
+
+# Ignore the entire .idea/ folder (IDE-specific settings)
+/.idea/
+
+# Ignore build directories
+/build/
+
+# Ignore Gradle-related files
+.gradle/
+/local.properties
+
+# Ignore generated files
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+
+# Ignore NDK build files
+.obj/
+.cxx/
+
+# Ignore macOS system files
+.DS_Store
+
+# Ignore keystore files (security best practice)
+*.jks
+*.keystore
+
+# Ignore log files
+*.log
+
+# Ignore virtual machine crash logs
+hs_err_pid*
+
+# Ignore captured screenshots and recordings
+/captures/
+
+# Ignore external native build artifacts
+/.externalNativeBuild/
+
+# Ignore metadata and profiling data in the release folder
+app/release/output-metadata.json
+app/release/baselineProfiles/
