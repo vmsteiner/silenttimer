@@ -42,7 +42,10 @@
         </activity>
         <service
             android:name=".presentation.service.TimerService"
-            android:foregroundServiceType="specialUse"/>
+            android:foregroundServiceType="specialUse">
+                <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                    android:value="Start and run the timer set by the user"/>
+        </service>
         <service
             android:name=".presentation.service.TimerComplicationDataSourceService"
             android:exported="true"
