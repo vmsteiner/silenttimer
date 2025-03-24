@@ -61,7 +61,7 @@ The guide below is based on a Pixel Watch 2 running Wear OS 5.1 and a Windows PC
 - Disconnect the watch from PC
 
 ### **Clean-Up (if required)**
-- Disable "ADB debugging" from Step 2
+- Disable "ADB debugging" from step 2
 - Delete the .zip and the extracted folder from step 3
 
 ## **🚀 Development**
