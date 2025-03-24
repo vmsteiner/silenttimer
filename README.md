@@ -17,7 +17,7 @@ wanted in my timer app:
 - Ambient mode: See the countdown when the watch is in ambient mode.
 
 ## **🔧 Supported Versions**
-The app currently supports Wear OS 5.0 and above, with Wear OS 5.1 as its main target.
+The app currently supports Wear OS 4.0 and above, with Wear OS 5.1 as its main target.
 
 ## **📸 Screenshots**
 ### Timer setup
@@ -58,6 +58,11 @@ The guide below is based on a Pixel Watch 2 running Wear OS 5.1 and a Windows PC
 - Open a Terminal in the folder where you extracted the SDK Platform Tools in Step 3
 - Run the following command: ```.\adb install "Path\to\the\downloaded\silenttimer.apk"```
 - Success🎉🎉
+- Disconnect the watch from PC
+
+### **Clean-Up (if required)**
+- Disable "ADB debugging" from Step 2
+- Delete the .zip and the extracted folder from step 3
 
 ## **🚀 Development**
 
