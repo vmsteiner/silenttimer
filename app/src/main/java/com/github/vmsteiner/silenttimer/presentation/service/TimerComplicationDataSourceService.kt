@@ -4,6 +4,7 @@ import android.app.ActivityOptions
 import android.app.PendingIntent
 import android.content.Intent
 import android.graphics.drawable.Icon
+import android.os.Build
 import android.util.Log
 import androidx.wear.watchface.complications.data.ComplicationData
 import androidx.wear.watchface.complications.data.ComplicationText
@@ -195,10 +196,15 @@ class TimerComplicationDataSourceService : SuspendingComplicationDataSourceServi
      */
     private fun createComplicationTapAction(): PendingIntent {
 
-        // This *should* avoid BAL activity warning, but doesn't work...
-        // https://developer.android.com/guide/components/activities/background-starts#exceptions
-        val activityOptions = ActivityOptions.makeBasic().apply {
-            setPendingIntentCreatorBackgroundActivityStartMode(ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
+        // Check for API level 34+
+        val activityOptions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            ActivityOptions.makeBasic().apply {
+                // This *should* avoid BAL activity warning, but doesn't work...
+                // https://developer.android.com/guide/components/activities/background-starts#exceptions
+                setPendingIntentCreatorBackgroundActivityStartMode(ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
+            }.toBundle()
+        } else {
+            null // API < 34, so no activityOptions
         }
 
         return PendingIntent.getActivity(
@@ -206,7 +212,7 @@ class TimerComplicationDataSourceService : SuspendingComplicationDataSourceServi
             1,
             Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-            activityOptions.toBundle()
+            activityOptions
         )
     }
 

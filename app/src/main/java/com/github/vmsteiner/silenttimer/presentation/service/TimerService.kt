@@ -7,6 +7,7 @@ import android.app.Service
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
 import android.os.SystemClock
@@ -112,10 +113,15 @@ class TimerService: Service(){
      */
     private fun buildNotification(): Notification {
 
-        // This *should* avoid BAL activity warning, but doesn't work...
-        // https://developer.android.com/guide/components/activities/background-starts#exceptions
-        val activityOptions = ActivityOptions.makeBasic().apply {
-            setPendingIntentCreatorBackgroundActivityStartMode(ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
+        // Check for API level 34+
+        val activityOptions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            ActivityOptions.makeBasic().apply {
+                // This *should* avoid BAL activity warning, but doesn't work...
+                // https://developer.android.com/guide/components/activities/background-starts#exceptions
+                setPendingIntentCreatorBackgroundActivityStartMode(ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
+            }.toBundle()
+        } else {
+            null // API < 34, so no activityOptions
         }
 
         val launchActivityPendingIntent: PendingIntent = PendingIntent.getActivity(
@@ -123,7 +129,7 @@ class TimerService: Service(){
             0,
             Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-            activityOptions.toBundle()
+            activityOptions
         )
 
         val notificationBuilder  = NotificationCompat.Builder(this, "timer_channel")
