@@ -1,5 +1,7 @@
-# **Silent Timer ⏳**
+# **Silent Timer**
 A lightweight **Wear OS** timer app designed for silent operation — vibrates without ringing.
+
+![img.png](silent_timer_full.png)
 
 ## **📌 Features**
  ✅ **Silent**: Vibrates instead of ringing.<br>
