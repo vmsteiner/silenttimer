@@ -1,7 +1,7 @@
 # **Silent Timer**
 A lightweight **Wear OS** timer app designed for silent operation — vibrates without ringing.
 
-![img.png](silent_timer_full.png)
+![Silent Timer Logo](logo.svg)
 
 ## **📌 Features**
  ✅ **Silent**: Vibrates instead of ringing.<br>
@@ -23,13 +23,13 @@ The app currently supports Wear OS 4.0 and above, with Wear OS 5.1 as its main t
 
 ## **📸 Screenshots**
 ### Timer setup
-![img.png](screenshots/timer_setup_screen_small.png)
+![Timer setup screenshot](screenshots/timer_setup_screen_small.png)
 ### Timer display
-![img.png](screenshots/timer_display_screen_small.png)
+![Timer display screenshot](screenshots/timer_display_screen_small.png)
 ### Timer display (ambient mode)
-![img.png](screenshots/ambient_mode_small.png)
+![Timer display (ambient mode) screenshot](screenshots/ambient_mode_small.png)
 ### Timer complication and ongoing activity
-![img.png](screenshots/complication_small.png)
+![Timer complication and ongoing activity screenshot](screenshots/complication_small.png)
 
 ## **🚀 Installation**
 Currently the App must be sideloaded on the device (no Google Play Store).
