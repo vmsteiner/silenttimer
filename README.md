@@ -32,8 +32,9 @@ The app currently supports Wear OS 4.0 and above, with Wear OS 5.1 as its main t
 ![Timer complication and ongoing activity screenshot](screenshots/complication_small.png)
 
 ## **🚀 Installation**
-Currently the App must be sideloaded on the device (no Google Play Store).
-The guide below is based on a Pixel Watch 2 running Wear OS 5.1 and a Windows PC.
+Currently the App must be sideloaded on the device. 
+I am looking into a release on Google Play Store, please get in touch if you would be interested in testing.
+The sideloading guide below is based on a Pixel Watch 2 running Wear OS 5.1 and a Windows PC.
 
 ### **Step 1: Download the app**
 - Download the prebuild APK file from releases (or build it yourself)
