@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "com.github.vmsteiner.silenttimer"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.github.vmsteiner.silenttimer"
