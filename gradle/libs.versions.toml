@@ -1,18 +1,18 @@
 [versions]
 agp = "8.11.1"
-kotlin = "1.9.0"
+kotlin = "2.2.0"
 playServicesWearable = "19.0.0"
-composeBom = "2025.03.00"
+composeBom = "2025.06.01"
 composeMaterial = "1.4.1"
 composeFoundation = "1.4.1"
 activityCompose = "1.10.1"
 coreSplashscreen = "1.0.1"
 composeNavigation = "1.4.1"
 wearToolingPreview = "1.0.0"
-lifecycleRuntimeCompose = "2.8.7"
-lifecycleViewmodelCompose = "2.8.7"
+lifecycleRuntimeCompose = "2.9.1"
+lifecycleViewmodelCompose = "2.9.1"
 wearOngoing = "1.0.0"
-core = "1.15.0"
+core = "1.16.0"
 horologist = "0.6.22"
 horologistComposeLayout = "0.6.22"
 watchfaceComplicationsDataSourceKtx = "1.2.1"
@@ -42,4 +42,4 @@ watchface-complications-data-source-ktx = { group = "androidx.wear.watchface", n
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
-
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
