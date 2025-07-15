@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -22,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.wear.compose.material.Button
+import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.Icon
 import androidx.wear.compose.material.Text
 import androidx.wear.compose.material.TimeText
@@ -99,11 +101,11 @@ fun TimerDisplayScreen() {
                                 context.startService(it)
                             }
                         },
-                        modifier = Modifier
+                        modifier = Modifier.size(ButtonDefaults.DefaultButtonSize)
                     ) {
                         Icon(
                             painter = painterResource(id = R.drawable.baseline_stop_24),
-                            contentDescription = "Select",
+                            contentDescription = "Stop Timer",
                             tint = Color.White
                         )
                     }
