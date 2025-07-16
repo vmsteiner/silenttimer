@@ -51,6 +51,7 @@ import com.google.android.horologist.compose.ambient.AmbientState
  * This composable is responsible for rendering the timer display screen. It shows the
  * remaining time of the countdown, and provides a button for stopping the timer.
  * The UI adapts to the ambient (always-on) mode on Wear OS devices.
+ * It also has a second horizontal page where the halftime alert can be disabled.
  */
 @Composable
 fun TimerDisplayScreen() {
@@ -80,115 +81,161 @@ fun TimerDisplayScreen() {
     AmbientAware { ambientStateUpdate ->
         when (ambientStateUpdate) {
             // When the screen is in ambient (always-on) mode
-            is AmbientState.Ambient -> {
-                TimeText(modifier = Modifier.alpha(0.5f))
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(vertical = 8.dp)
-                ) {
-                    Text(
-                        text = Utils.formatTime(timeLeft),
-                        fontSize = 32.sp,
-                        color = Color.LightGray,
-                        style = TextStyle.Default.copy(
-                            fontFamily = FontFamily.SansSerif,
-                            fontWeight = FontWeight.Light,
-                            letterSpacing = 0.5.sp
-                        )
-                    )
-                }
-            }
+            is AmbientState.Ambient -> AmbientTimerDisplay(timeLeft)
 
             // When the screen is in interactive mode (regular mode)
-            is AmbientState.Interactive -> {
-                // Display the time with full opacity in interactive mode
-                TimeText()
-
-                HorizontalPager(
-                    state = pagerState,
-                ) { page ->
-                    when (page) {
-                        0 -> Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(vertical = 8.dp)
-                        ) {
-                            Text(
-                                text = Utils.formatTime(timeLeft),
-                                fontSize = 32.sp,
-                            )
-                            Spacer(modifier = Modifier.height(24.dp))
-                            Button(
-                                onClick = {
-                                    // Starts the TimerService to stop the timer when the button is clicked
-                                    Intent(context, TimerService::class.java).also {
-                                        it.action = TimerService.Actions.STOP.toString()
-                                        context.startService(it)
-                                    }
-                                },
-                                modifier = Modifier.size(ButtonDefaults.DefaultButtonSize)
-                            ) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.baseline_stop_24),
-                                    contentDescription = "Stop Timer",
-                                    tint = Color.White
-                                )
-                            }
-                        }
-
-                        1 -> Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(vertical = 8.dp)
-                        ) {
-                            // The primary label should have a maximum 3 lines of text
-                            // and the secondary label should have max 2 lines of text.
-                            ToggleChip(
-                                label = {
-                                    Text(
-                                        "Halftime alert",
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                },
-                                checked = checked,
-                                colors =
-                                    ToggleChipDefaults.toggleChipColors(
-                                        uncheckedToggleControlColor = ToggleChipDefaults.SwitchUncheckedIconColor
-                                    ),
-                                toggleControl = { Switch(checked = checked, enabled = true) },
-                                onCheckedChange = { checked = it },
-                                appIcon = {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.baseline_settings_24),
-                                        contentDescription = "Halftime alert",
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                },
-                                enabled = true,
-                            )
-                        }
+            is AmbientState.Interactive -> InteractiveTimerDisplay(
+                timeLeft = timeLeft,
+                pagerState = pagerState,
+                pageIndicatorState = pageIndicatorState,
+                checked = checked,
+                onCheckedChange = { checked = it },
+                onStopTimer = {
+                    Intent(context, TimerService::class.java).also {
+                        it.action = TimerService.Actions.STOP.toString()
+                        context.startService(it)
                     }
                 }
-
-                HorizontalPageIndicator(
-                    pageIndicatorState = pageIndicatorState
-                )
-            }
+            )
 
             // When the screen is off or inactive (ambient mode inactive)
-            is AmbientState.Inactive -> {
-                // No UI elements displayed when the screen is off
-            }
+            is AmbientState.Inactive -> Unit
 
         }
     }
 
+}
+
+/**
+ * Composable function for displaying the timer in ambient (always-on) mode.
+ *
+ * @param timeLeft The remaining time of the countdown in milliseconds.
+ */
+@Composable
+private fun AmbientTimerDisplay(timeLeft: Long) {
+    TimeText(modifier = Modifier.alpha(0.5f))
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(vertical = 8.dp)
+    ) {
+        Text(
+            text = Utils.formatTime(timeLeft),
+            fontSize = 32.sp,
+            color = Color.LightGray,
+            style = TextStyle.Default.copy(
+                fontFamily = FontFamily.SansSerif,
+                fontWeight = FontWeight.Light,
+                letterSpacing = 0.5.sp
+            )
+        )
+    }
+}
+
+/**
+ * Composable function for displaying the interactive timer UI.
+ *
+ * This includes a pager for navigating between the timer page and the settings page,
+ * as well as a horizontal page indicator for visual feedback.
+ *
+ * @param timeLeft The remaining time of the countdown in milliseconds.
+ * @param pagerState State of the horizontal pager.
+ * @param pageIndicatorState State of the page indicator tied to the pager.
+ * @param checked Whether the halftime alert toggle is enabled.
+ * @param onCheckedChange Callback when the toggle state is changed.
+ * @param onStopTimer Callback when the stop timer button is clicked.
+ */
+@Composable
+private fun InteractiveTimerDisplay(
+    timeLeft: Long,
+    pagerState: androidx.compose.foundation.pager.PagerState,
+    pageIndicatorState: PageIndicatorState,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    onStopTimer: () -> Unit
+) {
+    TimeText()
+    HorizontalPager(state = pagerState) { page ->
+        when (page) {
+            0 -> TimerPage(timeLeft = timeLeft, onStopTimer = onStopTimer)
+            1 -> SettingsPage(checked = checked, onCheckedChange = onCheckedChange)
+        }
+    }
+    HorizontalPageIndicator(pageIndicatorState = pageIndicatorState)
+}
+
+/**
+ * Composable function for rendering the main timer page.
+ *
+ * Displays the formatted remaining time and a stop button.
+ *
+ * @param timeLeft The remaining time of the countdown in milliseconds.
+ * @param onStopTimer Callback when the stop button is pressed.
+ */
+@Composable
+private fun TimerPage(timeLeft: Long, onStopTimer: () -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(vertical = 8.dp)
+    ) {
+        Text(
+            text = Utils.formatTime(timeLeft),
+            fontSize = 32.sp,
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        Button(
+            onClick = onStopTimer,
+            modifier = Modifier.size(ButtonDefaults.DefaultButtonSize)
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.baseline_stop_24),
+                contentDescription = "Stop Timer",
+                tint = Color.White
+            )
+        }
+    }
+}
+
+/**
+ * Composable function for rendering the settings page.
+ *
+ * Allows the user to enable or disable the halftime alert via a toggle chip.
+ *
+ * @param checked Whether the halftime alert is currently enabled.
+ * @param onCheckedChange Callback when the toggle chip state is changed.
+ */
+@Composable
+private fun SettingsPage(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(vertical = 8.dp)
+    ) {
+        ToggleChip(
+            label = {
+                Text("Halftime alert", maxLines = 1, overflow = TextOverflow.Ellipsis)
+            },
+            checked = checked,
+            colors = ToggleChipDefaults.toggleChipColors(
+                uncheckedToggleControlColor = ToggleChipDefaults.SwitchUncheckedIconColor
+            ),
+            toggleControl = { Switch(checked = checked, enabled = true) },
+            onCheckedChange = onCheckedChange,
+            appIcon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.baseline_settings_24),
+                    contentDescription = "Halftime alert",
+                    modifier = Modifier.size(24.dp)
+                )
+            },
+            enabled = true,
+        )
+    }
 }
