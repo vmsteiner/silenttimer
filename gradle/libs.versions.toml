@@ -16,6 +16,7 @@ core = "1.16.0"
 horologist = "0.6.23"
 horologistComposeLayout = "0.6.23"
 watchfaceComplicationsDataSourceKtx = "1.2.1"
+datastore = "1.1.7"
 
 [libraries]
 play-services-wearable = { group = "com.google.android.gms", name = "play-services-wearable", version.ref = "playServicesWearable" }
@@ -38,6 +39,7 @@ core = { group = "androidx.core", name = "core", version.ref = "core" }
 horologist-composables = { group = "com.google.android.horologist", name = "horologist-composables", version.ref = "horologist" }
 horologist-compose-layout = { group = "com.google.android.horologist", name = "horologist-compose-layout", version.ref = "horologistComposeLayout" }
 watchface-complications-data-source-ktx = { group = "androidx.wear.watchface", name = "watchface-complications-data-source-ktx", version.ref = "watchfaceComplicationsDataSourceKtx" }
+datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

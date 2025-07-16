@@ -68,6 +68,7 @@ dependencies {
     implementation(libs.horologist.composables)
     implementation(libs.horologist.compose.layout)
     implementation(libs.watchface.complications.data.source.ktx)
+    implementation(libs.datastore.preferences)
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.ui.test.junit4)
     debugImplementation(libs.ui.tooling)
