@@ -15,6 +15,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -75,7 +76,7 @@ fun TimerDisplayScreen() {
         }
     }
 
-    var checked by remember { mutableStateOf(true) }
+    var isHalftimeAlertOn by rememberSaveable  { mutableStateOf(true) }
 
     // AmbientAware ensures that we handle the different ambient states on Wear OS
     AmbientAware { ambientStateUpdate ->
@@ -88,8 +89,8 @@ fun TimerDisplayScreen() {
                 timeLeft = timeLeft,
                 pagerState = pagerState,
                 pageIndicatorState = pageIndicatorState,
-                checked = checked,
-                onCheckedChange = { checked = it },
+                isHalftimeAlertOn = isHalftimeAlertOn,
+                onHalftimeAlertChange  = { isHalftimeAlertOn = it },
                 onStopTimer = {
                     Intent(context, TimerService::class.java).also {
                         it.action = TimerService.Actions.STOP.toString()
@@ -143,8 +144,8 @@ private fun AmbientTimerDisplay(timeLeft: Long) {
  * @param timeLeft The remaining time of the countdown in milliseconds.
  * @param pagerState State of the horizontal pager.
  * @param pageIndicatorState State of the page indicator tied to the pager.
- * @param checked Whether the halftime alert toggle is enabled.
- * @param onCheckedChange Callback when the toggle state is changed.
+ * @param isHalftimeAlertOn Whether the halftime alert toggle is enabled.
+ * @param onHalftimeAlertChange Callback when the toggle state is changed.
  * @param onStopTimer Callback when the stop timer button is clicked.
  */
 @Composable
@@ -152,15 +153,15 @@ private fun InteractiveTimerDisplay(
     timeLeft: Long,
     pagerState: androidx.compose.foundation.pager.PagerState,
     pageIndicatorState: PageIndicatorState,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
+    isHalftimeAlertOn: Boolean,
+    onHalftimeAlertChange: (Boolean) -> Unit,
     onStopTimer: () -> Unit
 ) {
     TimeText()
     HorizontalPager(state = pagerState) { page ->
         when (page) {
             0 -> TimerPage(timeLeft = timeLeft, onStopTimer = onStopTimer)
-            1 -> SettingsPage(checked = checked, onCheckedChange = onCheckedChange)
+            1 -> SettingsPage(isHalftimeAlertOn = isHalftimeAlertOn, onHalftimeAlertChange = onHalftimeAlertChange)
         }
     }
     HorizontalPageIndicator(pageIndicatorState = pageIndicatorState)
@@ -206,11 +207,11 @@ private fun TimerPage(timeLeft: Long, onStopTimer: () -> Unit) {
  *
  * Allows the user to enable or disable the halftime alert via a toggle chip.
  *
- * @param checked Whether the halftime alert is currently enabled.
- * @param onCheckedChange Callback when the toggle chip state is changed.
+ * @param isHalftimeAlertOn Whether the halftime alert is currently enabled.
+ * @param onHalftimeAlertChange Callback when the toggle chip state is changed.
  */
 @Composable
-private fun SettingsPage(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+private fun SettingsPage(isHalftimeAlertOn: Boolean, onHalftimeAlertChange: (Boolean) -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
@@ -222,12 +223,12 @@ private fun SettingsPage(checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
             label = {
                 Text("Halftime alert", maxLines = 1, overflow = TextOverflow.Ellipsis)
             },
-            checked = checked,
+            checked = isHalftimeAlertOn,
             colors = ToggleChipDefaults.toggleChipColors(
                 uncheckedToggleControlColor = ToggleChipDefaults.SwitchUncheckedIconColor
             ),
-            toggleControl = { Switch(checked = checked, enabled = true) },
-            onCheckedChange = onCheckedChange,
+            toggleControl = { Switch(checked = isHalftimeAlertOn, enabled = true) },
+            onCheckedChange = onHalftimeAlertChange,
             appIcon = {
                 Icon(
                     painter = painterResource(id = R.drawable.baseline_settings_24),
