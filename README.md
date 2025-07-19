@@ -39,7 +39,7 @@ There are two ways to install the app on the device:
 2. Sideloaded it on the device.
 
 ### Google Play Store beta test
-- Join the Google group to be automatically added to the testers list:: https://groups.google.com/g/closed-testing-silent-timer
+- Join the Google group to be automatically added to the testers list: https://groups.google.com/g/closed-testing-silent-timer
 - Join the beta: https://play.google.com/apps/testing/com.github.vmsteiner.silenttimer
 - When installing the app be sure to select your watch as the target device (and not your phone, or you will get an error)
 
