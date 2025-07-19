@@ -21,11 +21,15 @@ import androidx.wear.watchface.complications.datasource.ComplicationDataSourceUp
 import com.github.vmsteiner.silenttimer.R
 import com.github.vmsteiner.silenttimer.presentation.ui.MainActivity
 import com.github.vmsteiner.silenttimer.presentation.utils.CountdownManager
+import com.github.vmsteiner.silenttimer.presentation.utils.HALFTIME_ALERT_KEY
 import com.github.vmsteiner.silenttimer.presentation.utils.TimerStateManager
+import com.github.vmsteiner.silenttimer.presentation.utils.dataStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalTime
@@ -189,17 +193,28 @@ class TimerService: Service(){
         countdownJob = CoroutineScope(Dispatchers.Default).launch {
             Log.d("TimerService", "Timer started")
             triggerComplicationUpdate(applicationContext)
+
             try{
                 while (timeLeftInMillis > 0) {
                     timeLeftInMillis -= 1000 // Decrease by 1 second
                     CountdownManager.updateCountdownTime(timeLeftInMillis)
 
+
+
                     // Check if the timer has reached the halfway point and buzz if it hasn't buzzed yet
                     if (!hasBuzzedAtHalfway && timeLeftInMillis <= halfwayPoint) {
-                        withContext(Dispatchers.Main) {
-                            vibrateShort()
+
+                        val isHalftimeAlertEnabled = applicationContext.dataStore.data
+                            .map { prefs -> prefs[HALFTIME_ALERT_KEY] ?: true }
+                            .first()
+
+                        if (isHalftimeAlertEnabled) {
+                            withContext(Dispatchers.Main) {
+                                vibrateShort()
+                                Log.d("TimerService", "Halftime alert")
+                            }
+                            hasBuzzedAtHalfway = true
                         }
-                        hasBuzzedAtHalfway = true
                     }
 
                     delay(1000) // Delay for 1 second

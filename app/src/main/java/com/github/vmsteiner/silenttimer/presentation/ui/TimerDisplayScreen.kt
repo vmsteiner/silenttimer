@@ -13,10 +13,8 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -29,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.datastore.preferences.core.edit
 import androidx.wear.compose.material.Button
 import androidx.wear.compose.material.ButtonDefaults
 import androidx.wear.compose.material.HorizontalPageIndicator
@@ -42,9 +41,14 @@ import androidx.wear.compose.material.ToggleChipDefaults
 import com.github.vmsteiner.silenttimer.R
 import com.github.vmsteiner.silenttimer.presentation.service.TimerService
 import com.github.vmsteiner.silenttimer.presentation.utils.CountdownManager
+import com.github.vmsteiner.silenttimer.presentation.utils.HALFTIME_ALERT_KEY
 import com.github.vmsteiner.silenttimer.presentation.utils.Utils
+import com.github.vmsteiner.silenttimer.presentation.utils.dataStore
 import com.google.android.horologist.compose.ambient.AmbientAware
 import com.google.android.horologist.compose.ambient.AmbientState
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 
 /**
  * Composable function for displaying the timer's remaining time.
@@ -76,7 +80,20 @@ fun TimerDisplayScreen() {
         }
     }
 
-    var isHalftimeAlertOn by rememberSaveable  { mutableStateOf(true) }
+    val halftimeAlertFlow: Flow<Boolean> = context.dataStore.data
+        .map { preferences -> preferences[HALFTIME_ALERT_KEY] ?: true }
+
+    val isHalftimeAlertOn by halftimeAlertFlow.collectAsState(initial = true)
+
+    val scope = rememberCoroutineScope()
+
+    val onHalftimeAlertChange: (Boolean) -> Unit = { isOn ->
+        scope.launch {
+            context.dataStore.edit { preferences ->
+                preferences[HALFTIME_ALERT_KEY] = isOn
+            }
+        }
+    }
 
     // AmbientAware ensures that we handle the different ambient states on Wear OS
     AmbientAware { ambientStateUpdate ->
@@ -90,7 +107,7 @@ fun TimerDisplayScreen() {
                 pagerState = pagerState,
                 pageIndicatorState = pageIndicatorState,
                 isHalftimeAlertOn = isHalftimeAlertOn,
-                onHalftimeAlertChange  = { isHalftimeAlertOn = it },
+                onHalftimeAlertChange  = onHalftimeAlertChange,
                 onStopTimer = {
                     Intent(context, TimerService::class.java).also {
                         it.action = TimerService.Actions.STOP.toString()
