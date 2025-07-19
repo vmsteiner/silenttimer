@@ -196,14 +196,19 @@ class TimerComplicationDataSourceService : SuspendingComplicationDataSourceServi
      */
     private fun createComplicationTapAction(): PendingIntent {
 
-        // Check for API level 34+
-        val activityOptions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        // Check for API level 36+
+        val activityOptions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
             ActivityOptions.makeBasic().apply {
-                // This *should* avoid BAL activity warning, but doesn't work...
+                // Avoid BAL activity warning
                 // https://developer.android.com/guide/components/activities/background-starts#exceptions
-                setPendingIntentCreatorBackgroundActivityStartMode(ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
+                pendingIntentCreatorBackgroundActivityStartMode = ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOW_ALWAYS
             }.toBundle()
-        } else {
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            ActivityOptions.makeBasic().apply {
+                pendingIntentCreatorBackgroundActivityStartMode = ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+            }.toBundle()
+        }
+        else {
             null // API < 34, so no activityOptions
         }
 

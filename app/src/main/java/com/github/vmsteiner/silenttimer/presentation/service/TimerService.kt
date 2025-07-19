@@ -117,14 +117,19 @@ class TimerService: Service(){
      */
     private fun buildNotification(): Notification {
 
-        // Check for API level 34+
-        val activityOptions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+        // Check for API level 36+
+        val activityOptions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
             ActivityOptions.makeBasic().apply {
-                // This *should* avoid BAL activity warning, but doesn't work...
+                // Avoid BAL activity warning
                 // https://developer.android.com/guide/components/activities/background-starts#exceptions
-                setPendingIntentCreatorBackgroundActivityStartMode(ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED)
+                pendingIntentCreatorBackgroundActivityStartMode = ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOW_ALWAYS
             }.toBundle()
-        } else {
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            ActivityOptions.makeBasic().apply {
+                pendingIntentCreatorBackgroundActivityStartMode = ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+            }.toBundle()
+        }
+        else {
             null // API < 34, so no activityOptions
         }
 
@@ -180,7 +185,7 @@ class TimerService: Service(){
         val halfwayPoint = initialTimeInMillis / 2
         var hasBuzzedAtHalfway = false
 
-        wakeLock = (getSystemService(Context.POWER_SERVICE) as PowerManager).run {
+        wakeLock = (getSystemService(POWER_SERVICE) as PowerManager).run {
             newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "SilentTimer::Wakelock").apply {
                 try {
                     acquire(timeLeftInMillis + 10000)
@@ -236,7 +241,7 @@ class TimerService: Service(){
      * Triggers a long vibration when the timer ends.
      */
     private fun vibrate() {
-        val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+        val vibratorManager = getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager
         val vibrator = vibratorManager.defaultVibrator// Vibrate for 500ms, pause for 500ms, repeat indefinitely
         val pattern = longArrayOf(0, 500, 500, 500)
         val vibrationEffect = VibrationEffect.createWaveform(pattern, 0) // 0 means repeat indefinitely
@@ -247,7 +252,7 @@ class TimerService: Service(){
      * Triggers a short vibration in the half-time of the countdown.
      */
     private fun vibrateShort() {
-        val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+        val vibratorManager = getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager
         val vibrator = vibratorManager.defaultVibrator
 
         // Define a single, short vibration (e.g., 200ms)
@@ -264,7 +269,7 @@ class TimerService: Service(){
      * Stops ongoing vibration.
      */
     private fun stopVibration() {
-        val vibratorManager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+        val vibratorManager = getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager
         val vibrator = vibratorManager.defaultVibrator
         vibrator.cancel()
     }
