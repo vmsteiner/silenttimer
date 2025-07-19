@@ -204,11 +204,10 @@ class TimerService: Service(){
                     timeLeftInMillis -= 1000 // Decrease by 1 second
                     CountdownManager.updateCountdownTime(timeLeftInMillis)
 
-
-
-                    // Check if the timer has reached the halfway point and buzz if it hasn't buzzed yet
+                    // Check if the timer has reached the halfway point and hasn't buzzed yet
                     if (!hasBuzzedAtHalfway && timeLeftInMillis <= halfwayPoint) {
 
+                        // Get the current user setting about halftime alert
                         val isHalftimeAlertEnabled = applicationContext.dataStore.data
                             .map { prefs -> prefs[HALFTIME_ALERT_KEY] ?: true }
                             .first()
