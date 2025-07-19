@@ -26,7 +26,7 @@ The app currently supports Wear OS 4.0 and above, with Wear OS 5.1 as its main t
 ![Timer setup screenshot](screenshots/timer_setup_screen_small.png)
 ### Timer display
 ![Timer display screenshot](screenshots/timer_display_screen_small.png)
-### Timer Settings
+### Timer settings
 ![Timer_settings screenshot](screenshots/settings_screen_small.png)
 ### Timer display (ambient mode)
 ![Timer display (ambient mode) screenshot](screenshots/ambient_mode_small.png)
@@ -36,7 +36,7 @@ The app currently supports Wear OS 4.0 and above, with Wear OS 5.1 as its main t
 ## **🚀 Installation**
 There are two ways to install the app on the device:
 1. Join the beta test to download it directly from the Google Play Store.
-2. Sideloaded it on the device.
+2. Sideload it on the device.
 
 ### Google Play Store beta test
 - Join the Google group to be automatically added to the testers list: https://groups.google.com/g/closed-testing-silent-timer
