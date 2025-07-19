@@ -5,7 +5,7 @@ A lightweight **Wear OS** timer app designed for silent operation — vibrates w
 
 ## **📌 Features**
  ✅ **Silent**: Vibrates instead of ringing.<br>
- ✅ **Halftime buzz**: Buzzes briefly at halftime.<br>
+ ✅ **Halftime alert**: Option to buzz briefly at halftime.<br>
  ✅ **Ambient mode**: Supports countdown in ambient mode.<br>
  ✅ **Complication**: Includes a watchface complication.<br>
  ✅ **Minimalist UI**: Designed for Wear OS with a simple interface.<br>
@@ -15,7 +15,7 @@ I developed this app for personal use because of features I missed in the defaul
 timer app. The goal is to keep it simple and similar to the default timer. Features I
 wanted in my timer app:
 - Silent operation: Vibrate without ringing when the timer expires.
-- Halfway buzz: Brief reminder when the timer is halfway (e.g. for cooking).
+- Halfway alert: Brief reminder when the timer is halfway (e.g. for cooking).
 - Ambient mode: See the countdown when the watch is in ambient mode.
 
 ## **🔧 Supported Versions**
@@ -26,20 +26,31 @@ The app currently supports Wear OS 4.0 and above, with Wear OS 5.1 as its main t
 ![Timer setup screenshot](screenshots/timer_setup_screen_small.png)
 ### Timer display
 ![Timer display screenshot](screenshots/timer_display_screen_small.png)
+### Timer Settings
+![Timer_settings screenshot](screenshots/settings_screen_small.png)
 ### Timer display (ambient mode)
 ![Timer display (ambient mode) screenshot](screenshots/ambient_mode_small.png)
 ### Timer complication and ongoing activity
 ![Timer complication and ongoing activity screenshot](screenshots/complication_small.png)
 
 ## **🚀 Installation**
-Currently the App must be sideloaded on the device. 
-I am looking into a release on Google Play Store, please get in touch if you would be interested in testing.
+There are two ways to install the app on the device:
+1. Join the beta test to download it directly from the Google Play Store.
+2. Sideloaded it on the device.
+
+### Google Play Store beta test
+- Join the Google group to be automatically added to the testers list:: https://groups.google.com/g/closed-testing-silent-timer
+- Join the beta: https://play.google.com/apps/testing/com.github.vmsteiner.silenttimer
+- When installing the app be sure to select your watch as the target device (and not your phone, or you will get an error)
+
+### Sideloading 
+
 The sideloading guide below is based on a Pixel Watch 2 running Wear OS 5.1 and a Windows PC.
 
-### **Step 1: Download the app**
+#### **Step 1: Download the app**
 - Download the prebuild APK file from releases (or build it yourself)
 
-### **Step 2: Prepare the watch**
+#### **Step 2: Prepare the watch**
 - Open Settings
 - Tap System > About > Versions
 - Tap the Build number seven times to enable developer options
@@ -47,23 +58,23 @@ The sideloading guide below is based on a Pixel Watch 2 running Wear OS 5.1 and 
 - Tap Developer options
 - Enable "ADB debugging"
 
-### **Step 3: Download ADB on your PC**
+#### **Step 3: Download ADB on your PC**
 - Download the [SDK Platform Tools](https://developer.android.com/tools/releases/platform-tools) provided by Google
 - Extract the .zip
 
-### **Step 4: Connect the watch to PC**
+#### **Step 4: Connect the watch to PC**
 - Connect the watch charger to a USB-C port from your PC (Pixel Watch 2 and up)
 - Put your watch on the charger and unlock it with PIN
 - A pop-up should appear "Allow Debugging". Select **OK**. 
 - (If no Pop-Up appears disable and enable "ADB debugging" from Step 2 while connected to the PC)
 
-### **Step 5: Transfer app to watch**
+#### **Step 5: Transfer app to watch**
 - Open a Terminal in the folder where you extracted the SDK Platform Tools in Step 3
 - Run the following command: ```.\adb install "Path\to\the\downloaded\silenttimer.apk"```
 - Success🎉🎉
 - Disconnect the watch from PC
 
-### **Clean-Up (if required)**
+#### **Clean-Up (if required)**
 - Disable "ADB debugging" from step 2
 - Delete the .zip and the extracted folder from step 3
 
@@ -105,6 +116,7 @@ Handles **screen navigation** using `SwipeDismissableNavHost`. Automatically swi
 ### **🔹 `TimerDisplayScreen.kt`**
 - Shows the remaining time.
 - Allows stopping the timer.
+- Has a horizontal page to access the settings
 - Supports **Wear OS Ambient Mode** for low-power display.
 
 ### **🔹 `TimerService.kt`**
@@ -130,6 +142,9 @@ Handles **screen navigation** using `SwipeDismissableNavHost`. Automatically swi
 
 ### **🔹 `Utils.kt`**
 - Contains helper functions, including **time formatting**.
+
+### **🔹 `Settings.kt`**
+- Manages application-level **settings** using Jetpack DataStore.
 
 ### **🔹 `SilentTimerTheme.kt`**
 - Defines the **Wear OS Material Theme** for consistent styling.
