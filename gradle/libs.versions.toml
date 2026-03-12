@@ -1,22 +1,22 @@
 [versions]
 agp = "9.1.0"
-kotlin = "2.2.10"
+kotlin = "2.3.10"
 playServicesWearable = "19.0.0"
-composeBom = "2025.06.01"
-composeMaterial = "1.4.1"
-composeFoundation = "1.4.1"
-activityCompose = "1.10.1"
-coreSplashscreen = "1.0.1"
-composeNavigation = "1.4.1"
+composeBom = "2026.03.00"
+composeMaterial = "1.5.6"
+composeFoundation = "1.5.6"
+activityCompose = "1.13.0"
+coreSplashscreen = "1.2.0"
+composeNavigation = "1.5.6"
 wearToolingPreview = "1.0.0"
-lifecycleRuntimeCompose = "2.9.1"
-lifecycleViewmodelCompose = "2.9.1"
-wearOngoing = "1.0.0"
-core = "1.16.0"
-horologist = "0.6.23"
-horologistComposeLayout = "0.6.23"
-watchfaceComplicationsDataSourceKtx = "1.2.1"
-datastore = "1.1.7"
+lifecycleRuntimeCompose = "2.10.0"
+lifecycleViewmodelCompose = "2.10.0"
+wearOngoing = "1.1.0"
+core = "1.18.0"
+horologist = "0.7.15"
+horologistComposeLayout = "0.7.15"
+watchfaceComplicationsDataSourceKtx = "1.3.0"
+datastore = "1.2.1"
 
 [libraries]
 play-services-wearable = { group = "com.google.android.gms", name = "play-services-wearable", version.ref = "playServicesWearable" }
@@ -43,5 +43,4 @@ datastore-preferences = { group = "androidx.datastore", name = "datastore-prefer
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
