@@ -12,7 +12,7 @@ android {
     defaultConfig {
         applicationId = "com.github.vmsteiner.silenttimer"
         minSdk = 33
-        targetSdk = 34
+        targetSdk = 37
         versionCode = 2
         versionName = "1.1.0"
 
