@@ -11,8 +11,4 @@ data class TimerState(
     fun remainingTime(now: Long = SystemClock.elapsedRealtime()): Long {
         return maxOf(0L, endTimeElapsedRealtime - now)
     }
-
-    fun isFinished(now: Long = SystemClock.elapsedRealtime()): Boolean {
-        return remainingTime(now) == 0L
-    }
 }
