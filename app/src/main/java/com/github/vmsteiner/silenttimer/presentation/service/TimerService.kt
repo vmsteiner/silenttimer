@@ -176,11 +176,13 @@ class TimerService: Service(){
      * Starts the countdown and ensures the device stays awake.
      */
     private fun startCountdown() {
+        countdownJob?.cancel()
+
         val timerState = TimerManager.timerState.value
         val halfwayPoint = timerState.durationMillis / 2
         var hasBuzzedAtHalfway = false
 
-        wakeLock = (getSystemService(POWER_SERVICE) as PowerManager).run {
+        val currentWakeLock = (getSystemService(POWER_SERVICE) as PowerManager).run {
             newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "SilentTimer::Wakelock").apply {
                 try {
                     acquire(timerState.remainingTime() + 10_000)
@@ -189,6 +191,7 @@ class TimerService: Service(){
                 }
             }
         }
+        wakeLock = currentWakeLock
 
         countdownJob = CoroutineScope(Dispatchers.Default).launch {
             Log.d("TimerService", "Timer started")
@@ -223,10 +226,12 @@ class TimerService: Service(){
                     vibrate()
                 }
             } finally {
-                wakeLock?.let {
-                    if (it.isHeld) it.release()
+                if (currentWakeLock.isHeld) {
+                    currentWakeLock.release()
                 }
-                wakeLock = null
+                if (wakeLock === currentWakeLock) {
+                    wakeLock = null
+                }
             }
         }
     }
