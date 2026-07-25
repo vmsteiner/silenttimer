@@ -221,9 +221,8 @@ class TimerService: Service(){
             triggerComplicationUpdate(applicationContext)
 
             try{
-                while (true) {
+                while (TimerManager.timerState.value.remainingTime() > 0L) {
                     val remaining = TimerManager.timerState.value.remainingTime()
-                    if (remaining <= 0L) break
 
                     // Check if the timer has reached the halfway point and hasn't buzzed yet
                     if (!hasBuzzedAtHalfway && remaining <= halfwayPoint) {
