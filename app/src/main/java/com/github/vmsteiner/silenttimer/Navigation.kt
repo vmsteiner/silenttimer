@@ -9,7 +9,8 @@ import androidx.wear.compose.navigation.composable
 import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
 import com.github.vmsteiner.silenttimer.presentation.ui.TimerDisplayScreen
 import com.github.vmsteiner.silenttimer.presentation.ui.TimerSetupScreen
-import com.github.vmsteiner.silenttimer.presentation.utils.TimerStateManager
+import com.github.vmsteiner.silenttimer.presentation.utils.TimerManager
+import com.github.vmsteiner.silenttimer.presentation.utils.TimerState
 
 /**
  * Manages the navigation for the Silent Timer app.
@@ -18,7 +19,8 @@ import com.github.vmsteiner.silenttimer.presentation.utils.TimerStateManager
 @Composable
 fun AppNavigation() {
     val navController = rememberSwipeDismissableNavController()
-    val isTimerActive by TimerStateManager.isTimerActive.collectAsState(initial = false)
+    val timerState by TimerManager.timerState.collectAsState(initial = TimerState())
+    val isTimerActive = timerState.isRunning
 
     /**
      * Watches for changes in the timer state and navigates to the appropriate screen.

@@ -11,8 +11,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
@@ -40,12 +42,13 @@ import androidx.wear.compose.material.ToggleChip
 import androidx.wear.compose.material.ToggleChipDefaults
 import com.github.vmsteiner.silenttimer.R
 import com.github.vmsteiner.silenttimer.presentation.service.TimerService
-import com.github.vmsteiner.silenttimer.presentation.utils.CountdownManager
 import com.github.vmsteiner.silenttimer.presentation.utils.HALFTIME_ALERT_KEY
+import com.github.vmsteiner.silenttimer.presentation.utils.TimerManager
 import com.github.vmsteiner.silenttimer.presentation.utils.Utils
 import com.github.vmsteiner.silenttimer.presentation.utils.dataStore
 import com.google.android.horologist.compose.ambient.AmbientAware
 import com.google.android.horologist.compose.ambient.AmbientState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -63,8 +66,20 @@ fun TimerDisplayScreen() {
     // Context of the current composable, used to start services
     val context = LocalContext.current
 
-    // Collects the current countdown time from the CountdownManager
-    val timeLeft by CountdownManager.countdownTime.collectAsState()
+    // Collects the current countdown time from the TimerManager
+    val timerState by TimerManager.timerState.collectAsState()
+
+    val remainingTime = remember(timerState) {
+        mutableLongStateOf(timerState.remainingTime())
+    }
+
+    LaunchedEffect(timerState) {
+        while (timerState.isRunning) {
+            remainingTime.longValue = timerState.remainingTime()
+            delay(1000)
+        }
+        remainingTime.longValue = timerState.remainingTime()
+    }
 
     // Setup horizontal pager with 2 screen
     val pagerState = rememberPagerState(pageCount = { 2 })
@@ -99,11 +114,11 @@ fun TimerDisplayScreen() {
     AmbientAware { ambientStateUpdate ->
         when (ambientStateUpdate) {
             // When the screen is in ambient (always-on) mode
-            is AmbientState.Ambient -> AmbientTimerDisplay(timeLeft)
+            is AmbientState.Ambient -> AmbientTimerDisplay(remainingTime.longValue)
 
             // When the screen is in interactive mode (regular mode)
             is AmbientState.Interactive -> InteractiveTimerDisplay(
-                timeLeft = timeLeft,
+                timeLeft = remainingTime.longValue,
                 pagerState = pagerState,
                 pageIndicatorState = pageIndicatorState,
                 isHalftimeAlertOn = isHalftimeAlertOn,

@@ -10,7 +10,6 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
-import android.os.SystemClock
 import android.os.VibrationEffect
 import android.os.VibratorManager
 import android.util.Log
@@ -20,9 +19,8 @@ import androidx.wear.ongoing.Status
 import androidx.wear.watchface.complications.datasource.ComplicationDataSourceUpdateRequester
 import com.github.vmsteiner.silenttimer.R
 import com.github.vmsteiner.silenttimer.presentation.ui.MainActivity
-import com.github.vmsteiner.silenttimer.presentation.utils.CountdownManager
 import com.github.vmsteiner.silenttimer.presentation.utils.HALFTIME_ALERT_KEY
-import com.github.vmsteiner.silenttimer.presentation.utils.TimerStateManager
+import com.github.vmsteiner.silenttimer.presentation.utils.TimerManager
 import com.github.vmsteiner.silenttimer.presentation.utils.dataStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -43,8 +41,6 @@ import java.util.concurrent.TimeUnit
  */
 class TimerService: Service(){
     private var countdownJob: Job? = null
-    private var timeLeftInMillis: Long = 0
-    private var initialTimeInMillis: Long = 0
     private val notificationId: Int = 1
     private var wakeLock: PowerManager.WakeLock? = null
 
@@ -81,12 +77,11 @@ class TimerService: Service(){
         val minutes = selectedTime.minute
         val seconds = selectedTime.second
 
-        initialTimeInMillis = TimeUnit.HOURS.toMillis(hours.toLong()) +
+        val initialTimeInMillis = TimeUnit.HOURS.toMillis(hours.toLong()) +
                 TimeUnit.MINUTES.toMillis(minutes.toLong()) +
                 TimeUnit.SECONDS.toMillis(seconds.toLong())
-        timeLeftInMillis = initialTimeInMillis
 
-        TimerStateManager.setTimerActive(true)
+        TimerManager.start(initialTimeInMillis)
 
         startForeground(notificationId, buildNotification())
         startCountdown()
@@ -107,9 +102,8 @@ class TimerService: Service(){
     private fun stopTimerAndVibration() {
         stopVibration()
         stopTimer()
-        TimerStateManager.setTimerActive(false)
+        TimerManager.stop()
         triggerComplicationUpdate(applicationContext)
-        CountdownManager.updateCountdownTime(0L) // Reset the countdown time
     }
 
     /**
@@ -150,14 +144,13 @@ class TimerService: Service(){
             .setContentIntent(launchActivityPendingIntent)
 
         // Calculate the timestamp when the timer should hit zero
-        // Note the use of SystemClock.elapsedRealtime(), not System.currentTimeMillis() to avoid millis
-        val timeZeroMillis = SystemClock.elapsedRealtime() + timeLeftInMillis
+        val timerState = TimerManager.timerState.value
 
         // Create a TimerPart for the ongoing activity
         val timerPart = Status.TimerPart(
-            timeZeroMillis,    // When the timer will hit zero
+            timerState.endTimeElapsedRealtime,    // When the timer will hit zero
             -1L,               // -1L if not paused
-            initialTimeInMillis  // The total duration of the timer
+            timerState.durationMillis  // The total duration of the timer
         )
 
         val ongoingActivityStatus = Status.Builder()
@@ -182,13 +175,14 @@ class TimerService: Service(){
      * Starts the countdown and ensures the device stays awake.
      */
     private fun startCountdown() {
-        val halfwayPoint = initialTimeInMillis / 2
+        val timerState = TimerManager.timerState.value
+        val halfwayPoint = timerState.durationMillis / 2
         var hasBuzzedAtHalfway = false
 
         wakeLock = (getSystemService(POWER_SERVICE) as PowerManager).run {
             newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "SilentTimer::Wakelock").apply {
                 try {
-                    acquire(timeLeftInMillis + 10000)
+                    acquire(timerState.remainingTime() + 10_000)
                 } catch (e: Exception){
                     Log.e("TimerService", "WakeLock acquisition failed", e)
                 }
@@ -200,12 +194,12 @@ class TimerService: Service(){
             triggerComplicationUpdate(applicationContext)
 
             try{
-                while (timeLeftInMillis > 0) {
-                    timeLeftInMillis -= 1000 // Decrease by 1 second
-                    CountdownManager.updateCountdownTime(timeLeftInMillis)
+                while (true) {
+                    val remaining = TimerManager.timerState.value.remainingTime()
+                    if (remaining <= 0L) break
 
                     // Check if the timer has reached the halfway point and hasn't buzzed yet
-                    if (!hasBuzzedAtHalfway && timeLeftInMillis <= halfwayPoint) {
+                    if (!hasBuzzedAtHalfway && remaining <= halfwayPoint) {
 
                         // Get the current user setting about halftime alert
                         val isHalftimeAlertEnabled = applicationContext.dataStore.data

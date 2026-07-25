@@ -129,13 +129,13 @@ Handles **screen navigation** using `SwipeDismissableNavHost`. Automatically swi
 - Provides a **Wear OS complication** for the countdown timer.
 - Displays **remaining time** directly on supported watch faces.
 
-### **🔹 `CountdownManager.kt`**
-- Manages the **countdown timer state** using `StateFlow`.
-- Keeps track of **time remaining** for UI and complications.
+### **🔹 `TimerManager.kt`**
+- A **singleton** that manages the timer's lifecycle (start/stop).
+- Exposes the timer state via a `StateFlow` for reactive UI updates across the app and complications.
 
-### **🔹 `TimerStateManager.kt`**
-- A **singleton** managing timer state using `StateFlow`.
-- Keeps track of whether the timer is active or not.
+### **🔹 `TimerState.kt`**
+- A **data class** representing a consistent snapshot of the timer (running status, duration, and end time).
+- Uses `SystemClock.elapsedRealtime()` to ensure accuracy and survival across device sleep/Doze states.
 
 ### **🔹 `TimerSetupViewModel.kt`**
 - Stores the **selected countdown time** before starting the timer.

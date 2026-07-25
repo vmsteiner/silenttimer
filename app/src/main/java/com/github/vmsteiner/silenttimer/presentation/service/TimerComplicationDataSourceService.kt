@@ -21,8 +21,7 @@ import androidx.wear.watchface.complications.datasource.ComplicationRequest
 import androidx.wear.watchface.complications.datasource.SuspendingComplicationDataSourceService
 import com.github.vmsteiner.silenttimer.R
 import com.github.vmsteiner.silenttimer.presentation.ui.MainActivity
-import com.github.vmsteiner.silenttimer.presentation.utils.CountdownManager
-import com.github.vmsteiner.silenttimer.presentation.utils.TimerStateManager
+import com.github.vmsteiner.silenttimer.presentation.utils.TimerManager
 import java.time.Instant
 
 /**
@@ -138,8 +137,8 @@ class TimerComplicationDataSourceService : SuspendingComplicationDataSourceServi
             Icon.createWithResource(this, R.drawable.baseline_hourglass_empty_lightgray_24)
         ).build()
 
-        val (complicationText, contentDescription) = if (TimerStateManager.isTimerActive.value) {
-            val timeLeftInMillis = CountdownManager.countdownTime.value
+        val (complicationText, contentDescription) = if (TimerManager.timerState.value.isRunning) {
+            val timeLeftInMillis = TimerManager.timerState.value.remainingTime()
             val instant = Instant.now()
             val targetInstant = instant.plusMillis(timeLeftInMillis)
             val countDownTimeReference = CountDownTimeReference(targetInstant)
