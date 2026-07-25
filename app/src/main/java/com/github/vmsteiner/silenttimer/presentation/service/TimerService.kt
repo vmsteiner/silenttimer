@@ -25,6 +25,8 @@ import com.github.vmsteiner.silenttimer.presentation.utils.dataStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -32,6 +34,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import java.time.format.DateTimeParseException
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -41,6 +44,7 @@ import kotlin.time.Duration.Companion.milliseconds
  * Additionally, it updates complications and vibrates at specific points in the countdown.
  */
 class TimerService: Service(){
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private var countdownJob: Job? = null
     private val notificationId: Int = 1
     private var wakeLock: PowerManager.WakeLock? = null
@@ -71,8 +75,22 @@ class TimerService: Service(){
      * @param intent The intent containing the selected time in ISO_LOCAL_TIME format.
      */
     private fun start(intent: Intent) {
-        val timeString = intent.getStringExtra("selectedTime")
-        val selectedTime = LocalTime.parse(timeString, DateTimeFormatter.ISO_LOCAL_TIME)
+        if (countdownJob?.isActive == true) {
+            Log.d("TimerService", "Timer already active, ignoring start request.")
+            return
+        }
+
+        val timeString = intent.getStringExtra("selectedTime") ?: run {
+            Log.e("TimerService", "No selectedTime extra found in intent")
+            return
+        }
+
+        val selectedTime = try {
+            LocalTime.parse(timeString, DateTimeFormatter.ISO_LOCAL_TIME)
+        } catch (e: DateTimeParseException) {
+            Log.e("TimerService", "Failed to parse selectedTime: $timeString", e)
+            return
+        }
 
         val hours = selectedTime.hour
         val minutes = selectedTime.minute
@@ -93,6 +111,13 @@ class TimerService: Service(){
      */
     private fun stopTimer() {
         countdownJob?.cancel()
+        countdownJob = null
+
+        wakeLock?.let {
+            if (it.isHeld) it.release()
+        }
+        wakeLock = null
+
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
@@ -176,8 +201,6 @@ class TimerService: Service(){
      * Starts the countdown and ensures the device stays awake.
      */
     private fun startCountdown() {
-        countdownJob?.cancel()
-
         val timerState = TimerManager.timerState.value
         val halfwayPoint = timerState.durationMillis / 2
         var hasBuzzedAtHalfway = false
@@ -193,7 +216,7 @@ class TimerService: Service(){
         }
         wakeLock = currentWakeLock
 
-        countdownJob = CoroutineScope(Dispatchers.Default).launch {
+        countdownJob = serviceScope.launch {
             Log.d("TimerService", "Timer started")
             triggerComplicationUpdate(applicationContext)
 
@@ -279,6 +302,17 @@ class TimerService: Service(){
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
         stopTimerAndVibration()
+    }
+
+    override fun onDestroy() {
+        wakeLock?.let {
+            if (it.isHeld) it.release()
+        }
+        wakeLock = null
+        serviceScope.cancel()
+        countdownJob = null
+        stopVibration()
+        super.onDestroy()
     }
 
     /**
