@@ -49,9 +49,9 @@ import com.github.vmsteiner.silenttimer.presentation.utils.dataStore
 import com.google.android.horologist.compose.ambient.AmbientAware
 import com.google.android.horologist.compose.ambient.AmbientState
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Composable function for displaying the timer's remaining time.
@@ -76,7 +76,7 @@ fun TimerDisplayScreen() {
     LaunchedEffect(timerState) {
         while (timerState.isRunning) {
             remainingTime.longValue = timerState.remainingTime()
-            delay(1000)
+            delay(1000.milliseconds)
         }
         remainingTime.longValue = timerState.remainingTime()
     }
@@ -95,8 +95,11 @@ fun TimerDisplayScreen() {
         }
     }
 
-    val halftimeAlertFlow: Flow<Boolean> = context.dataStore.data
-        .map { preferences -> preferences[HALFTIME_ALERT_KEY] ?: true }
+    val halftimeAlertFlow = remember(context) {
+        context.dataStore.data.map { preferences ->
+            preferences[HALFTIME_ALERT_KEY] ?: true
+        }
+    }
 
     val isHalftimeAlertOn by halftimeAlertFlow.collectAsState(initial = true)
 

@@ -33,6 +33,7 @@ import kotlinx.coroutines.withContext
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * TimerService is a foreground service that handles the countdown timer.
@@ -215,7 +216,7 @@ class TimerService: Service(){
                         }
                     }
 
-                    delay(1000) // Delay for 1 second
+                    delay(1000.milliseconds) // Delay for 1 second
                 }
                 Log.d("TimerService", "Timer ended")
                 withContext(Dispatchers.Main) {
