@@ -162,8 +162,10 @@ class TimerService: Service(){
         )
 
         val notificationBuilder  = NotificationCompat.Builder(this, "timer_channel")
-            .setSmallIcon(R.drawable.baseline_hourglass_empty_24)
+            .setContentTitle("Silent Timer")
             .setContentText("Timer is active")
+            .setSmallIcon(R.drawable.baseline_hourglass_empty_24)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setOngoing(true)
             .setAutoCancel(false)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
