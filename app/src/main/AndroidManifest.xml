@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
 
     <application
         android:label="@string/app_name"
@@ -42,6 +43,13 @@
                 <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                     android:value="Start and run the timer set by the user"/>
         </service>
+
+        <receiver android:name=".presentation.receiver.TimerReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="com.github.vmsteiner.silenttimer.ACTION_HALFTIME" />
+                <action android:name="com.github.vmsteiner.silenttimer.ACTION_FINISH" />
+            </intent-filter>
+        </receiver>
         <service
             android:name=".presentation.service.TimerComplicationDataSourceService"
             android:exported="true"

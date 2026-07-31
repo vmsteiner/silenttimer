@@ -1,6 +1,6 @@
 package com.github.vmsteiner.silenttimer.presentation.service
 
-import android.app.ActivityOptions
+import android.app.AlarmManager
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.Service
@@ -10,6 +10,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
+import android.os.SystemClock
 import android.os.VibrationEffect
 import android.os.VibratorManager
 import android.util.Log
@@ -18,6 +19,7 @@ import androidx.wear.ongoing.OngoingActivity
 import androidx.wear.ongoing.Status
 import androidx.wear.watchface.complications.datasource.ComplicationDataSourceUpdateRequester
 import com.github.vmsteiner.silenttimer.R
+import com.github.vmsteiner.silenttimer.presentation.receiver.TimerReceiver
 import com.github.vmsteiner.silenttimer.presentation.ui.MainActivity
 import com.github.vmsteiner.silenttimer.presentation.utils.HALFTIME_ALERT_KEY
 import com.github.vmsteiner.silenttimer.presentation.utils.TimerManager
@@ -45,9 +47,7 @@ import kotlin.time.Duration.Companion.milliseconds
  */
 class TimerService: Service(){
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private var countdownJob: Job? = null
     private val notificationId: Int = 1
-    private var wakeLock: PowerManager.WakeLock? = null
 
     override fun onBind(intent: Intent?): IBinder? {
         return null
@@ -63,8 +63,14 @@ class TimerService: Service(){
      */
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when(intent?.action){
-            Actions.START.toString() -> start(intent)
+            Actions.START.toString() -> {
+                serviceScope.launch {
+                    start(intent)
+                }
+            }
             Actions.STOP.toString() -> stopTimerAndVibration()
+            TimerReceiver.ACTION_HALFTIME -> handleHalftime()
+            TimerReceiver.ACTION_FINISH -> handleFinish()
         }
         return START_NOT_STICKY
     }
@@ -74,8 +80,8 @@ class TimerService: Service(){
      *
      * @param intent The intent containing the selected time in ISO_LOCAL_TIME format.
      */
-    private fun start(intent: Intent) {
-        if (countdownJob?.isActive == true) {
+    private suspend fun start(intent: Intent) {
+        if (TimerManager.timerState.value.isRunning) {
             Log.d("TimerService", "Timer already active, ignoring start request.")
             return
         }
@@ -100,24 +106,26 @@ class TimerService: Service(){
                 TimeUnit.MINUTES.toMillis(minutes.toLong()) +
                 TimeUnit.SECONDS.toMillis(seconds.toLong())
 
+        // Fetch preference before scheduling any alarms to ensure determinism
+        val isHalftimeAlertEnabled = applicationContext.dataStore.data
+            .map { prefs -> prefs[HALFTIME_ALERT_KEY] ?: true }
+            .first()
+
         TimerManager.start(initialTimeInMillis)
 
-        startForeground(notificationId, buildNotification())
-        startCountdown()
+        withContext(Dispatchers.Main) {
+            startForeground(notificationId, buildNotification())
+        }
+
+        scheduleAlarms(initialTimeInMillis, isHalftimeAlertEnabled)
+        triggerComplicationUpdate(applicationContext)
     }
 
     /**
      * Stops the timer and clears all related resources.
      */
     private fun stopTimer() {
-        countdownJob?.cancel()
-        countdownJob = null
-
-        wakeLock?.let {
-            if (it.isHeld) it.release()
-        }
-        wakeLock = null
-
+        cancelAlarms()
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
@@ -135,35 +143,21 @@ class TimerService: Service(){
     /**
      * Builds a persistent notification for the foreground service to keep the timer running.
      */
-    private fun buildNotification(): Notification {
-
-        // Check for API level 36+
-        val activityOptions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
-            ActivityOptions.makeBasic().apply {
-                // Avoid BAL activity warning
-                // https://developer.android.com/guide/components/activities/background-starts#exceptions
-                pendingIntentCreatorBackgroundActivityStartMode = ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOW_ALWAYS
-            }.toBundle()
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            ActivityOptions.makeBasic().apply {
-                pendingIntentCreatorBackgroundActivityStartMode = ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
-            }.toBundle()
-        }
-        else {
-            null // API < 34, so no activityOptions
-        }
-
+    private fun buildNotification(isFinished: Boolean = false): Notification {
+        // No ActivityOptions (e.g. pendingIntentCreatorBackgroundActivityStartMode) are needed here.
+        // This PendingIntent is launched from an explicit user tap on the notification, which is an
+        // allowed background activity launch and does not require BAL opt-in.
+        val launchActivityIntent = Intent(this, MainActivity::class.java)
         val launchActivityPendingIntent: PendingIntent = PendingIntent.getActivity(
             this,
             0,
-            Intent(this, MainActivity::class.java),
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-            activityOptions
+            launchActivityIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         val notificationBuilder  = NotificationCompat.Builder(this, "timer_channel")
             .setContentTitle("Silent Timer")
-            .setContentText("Timer is active")
+            .setContentText(if (isFinished) "Timer finished!" else "Timer is active")
             .setSmallIcon(R.drawable.baseline_hourglass_empty_24)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setOngoing(true)
@@ -174,17 +168,20 @@ class TimerService: Service(){
         // Calculate the timestamp when the timer should hit zero
         val timerState = TimerManager.timerState.value
 
-        // Create a TimerPart for the ongoing activity
-        val timerPart = Status.TimerPart(
-            timerState.endTimeElapsedRealtime,    // When the timer will hit zero
-            -1L,               // -1L if not paused
-            timerState.durationMillis  // The total duration of the timer
-        )
-
-        val ongoingActivityStatus = Status.Builder()
-            // Sets the text used across various surfaces.
-            .addPart("timer", timerPart)
-            .build()
+        val ongoingActivityStatus = if (isFinished) {
+            Status.Builder()
+                .addPart("status", Status.TextPart("Finished"))
+                .build()
+        } else {
+            val timerPart = Status.TimerPart(
+                timerState.endTimeElapsedRealtime,    // When the timer will hit zero
+                -1L,                                  // -1L if not paused
+                timerState.durationMillis             // The total duration of the timer
+            )
+            Status.Builder()
+                .addPart("timer", timerPart)
+                .build()
+        }
 
         val ongoingActivity = OngoingActivity.Builder(this, notificationId, notificationBuilder)
             .setStatus(ongoingActivityStatus)
@@ -199,65 +196,58 @@ class TimerService: Service(){
         return notification
     }
 
+    private fun createTimerIntent(action: String): Intent {
+        return Intent(this, TimerReceiver::class.java).apply {
+            this.action = action
+        }
+    }
+
     /**
-     * Starts the countdown and ensures the device stays awake.
+     * Schedules exact alarms for the halfway point and completion.
      */
-    private fun startCountdown() {
-        val timerState = TimerManager.timerState.value
-        val halfwayPoint = timerState.durationMillis / 2
-        var hasBuzzedAtHalfway = false
+    private fun scheduleAlarms(durationMillis: Long, isHalftimeAlertEnabled: Boolean) {
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val endTime = SystemClock.elapsedRealtime() + durationMillis
+        val halfwayTime = SystemClock.elapsedRealtime() + (durationMillis / 2)
 
-        val currentWakeLock = (getSystemService(POWER_SERVICE) as PowerManager).run {
-            newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "SilentTimer::Wakelock").apply {
-                try {
-                    acquire(timerState.remainingTime() + 10_000)
-                } catch (e: Exception){
-                    Log.e("TimerService", "WakeLock acquisition failed", e)
-                }
-            }
+        // Finish Alarm
+        val finishPendingIntent = PendingIntent.getBroadcast(
+            this, 1, createTimerIntent(TimerReceiver.ACTION_FINISH),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        alarmManager.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, endTime, finishPendingIntent)
+
+        // Halftime Alarm
+        if (isHalftimeAlertEnabled && durationMillis > 2000) { // Only if timer > 2s
+            val halftimePendingIntent = PendingIntent.getBroadcast(
+                this, 2, createTimerIntent(TimerReceiver.ACTION_HALFTIME),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, halfwayTime, halftimePendingIntent)
         }
-        wakeLock = currentWakeLock
+    }
 
-        countdownJob = serviceScope.launch {
-            Log.d("TimerService", "Timer started")
-            triggerComplicationUpdate(applicationContext)
-
-            try{
-                while (TimerManager.timerState.value.remainingTime() > 0L) {
-                    val remaining = TimerManager.timerState.value.remainingTime()
-
-                    // Check if the timer has reached the halfway point and hasn't buzzed yet
-                    if (!hasBuzzedAtHalfway && remaining <= halfwayPoint) {
-
-                        // Get the current user setting about halftime alert
-                        val isHalftimeAlertEnabled = applicationContext.dataStore.data
-                            .map { prefs -> prefs[HALFTIME_ALERT_KEY] ?: true }
-                            .first()
-
-                        if (isHalftimeAlertEnabled) {
-                            withContext(Dispatchers.Main) {
-                                vibrateShort()
-                                Log.d("TimerService", "Halftime alert")
-                            }
-                            hasBuzzedAtHalfway = true
-                        }
-                    }
-
-                    delay(1000.milliseconds) // Delay for 1 second
-                }
-                Log.d("TimerService", "Timer ended")
-                withContext(Dispatchers.Main) {
-                    vibrate()
-                }
-            } finally {
-                if (currentWakeLock.isHeld) {
-                    currentWakeLock.release()
-                }
-                if (wakeLock === currentWakeLock) {
-                    wakeLock = null
-                }
-            }
+    private fun cancelAlarms() {
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        listOf(1 to TimerReceiver.ACTION_FINISH, 2 to TimerReceiver.ACTION_HALFTIME).forEach { (id, action) ->
+            PendingIntent.getBroadcast(
+                this, id, createTimerIntent(action),
+                PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+            )?.let { alarmManager.cancel(it) }
         }
+    }
+
+    private fun handleHalftime() {
+        Log.d("TimerService", "Halftime alarm received")
+        vibrateShort()
+    }
+
+    private fun handleFinish() {
+        Log.d("TimerService", "Finish alarm received")
+        vibrate()
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as android.app.NotificationManager
+        notificationManager.notify(notificationId, buildNotification(isFinished = true))
+        triggerComplicationUpdate(applicationContext)
     }
 
     /**
@@ -306,12 +296,7 @@ class TimerService: Service(){
     }
 
     override fun onDestroy() {
-        wakeLock?.let {
-            if (it.isHeld) it.release()
-        }
-        wakeLock = null
         serviceScope.cancel()
-        countdownJob = null
         stopVibration()
         super.onDestroy()
     }
