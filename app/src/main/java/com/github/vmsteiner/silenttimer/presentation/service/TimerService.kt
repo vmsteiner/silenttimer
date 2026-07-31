@@ -106,18 +106,13 @@ class TimerService: Service(){
                 TimeUnit.MINUTES.toMillis(minutes.toLong()) +
                 TimeUnit.SECONDS.toMillis(seconds.toLong())
 
-        // Fetch preference before scheduling any alarms to ensure determinism
-        val isHalftimeAlertEnabled = applicationContext.dataStore.data
-            .map { prefs -> prefs[HALFTIME_ALERT_KEY] ?: true }
-            .first()
-
         TimerManager.start(initialTimeInMillis)
 
         withContext(Dispatchers.Main) {
             startForeground(notificationId, buildNotification())
         }
 
-        scheduleAlarms(initialTimeInMillis, isHalftimeAlertEnabled)
+        scheduleAlarms(initialTimeInMillis)
         triggerComplicationUpdate(applicationContext)
     }
 
@@ -205,7 +200,7 @@ class TimerService: Service(){
     /**
      * Schedules exact alarms for the halfway point and completion.
      */
-    private fun scheduleAlarms(durationMillis: Long, isHalftimeAlertEnabled: Boolean) {
+    private fun scheduleAlarms(durationMillis: Long) {
         val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val endTime = SystemClock.elapsedRealtime() + durationMillis
         val halfwayTime = SystemClock.elapsedRealtime() + (durationMillis / 2)
@@ -218,7 +213,7 @@ class TimerService: Service(){
         alarmManager.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, endTime, finishPendingIntent)
 
         // Halftime Alarm
-        if (isHalftimeAlertEnabled && durationMillis > 2000) { // Only if timer > 2s
+        if (durationMillis > 2000) { // Only if timer > 2s
             val halftimePendingIntent = PendingIntent.getBroadcast(
                 this, 2, createTimerIntent(TimerReceiver.ACTION_HALFTIME),
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
@@ -239,7 +234,15 @@ class TimerService: Service(){
 
     private fun handleHalftime() {
         Log.d("TimerService", "Halftime alarm received")
-        vibrateShort()
+        serviceScope.launch {
+            val isHalftimeAlertEnabled = applicationContext.dataStore.data
+                .map { prefs -> prefs[HALFTIME_ALERT_KEY] ?: true }
+                .first()
+            if (isHalftimeAlertEnabled) {
+                vibrateShort()
+                Log.d("TimerService", "Buzz for halftime")
+            }
+        }
     }
 
     private fun handleFinish() {
