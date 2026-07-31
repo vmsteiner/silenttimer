@@ -139,17 +139,22 @@ class TimerComplicationDataSourceService : SuspendingComplicationDataSourceServi
 
         val (complicationText, contentDescription) = if (TimerManager.timerState.value.isRunning) {
             val timeLeftInMillis = TimerManager.timerState.value.remainingTime()
-            val instant = Instant.now()
-            val targetInstant = instant.plusMillis(timeLeftInMillis)
-            val countDownTimeReference = CountDownTimeReference(targetInstant)
+            if (timeLeftInMillis <= 0) {
+                PlainComplicationText.Builder(text = "00:00").build() to
+                        PlainComplicationText.Builder(text = "Timer finished").build()
+            } else {
+                val instant = Instant.now()
+                val targetInstant = instant.plusMillis(timeLeftInMillis)
+                val countDownTimeReference = CountDownTimeReference(targetInstant)
 
-            val complicationText = TimeDifferenceComplicationText.Builder(
-                TimeDifferenceStyle.STOPWATCH,
-                countDownTimeReference
-            ).build()
-            val contentDescription = PlainComplicationText.Builder(text = "Countdown ongoing").build()
+                val complicationText = TimeDifferenceComplicationText.Builder(
+                    TimeDifferenceStyle.STOPWATCH,
+                    countDownTimeReference
+                ).build()
+                val contentDescription = PlainComplicationText.Builder(text = "Countdown ongoing").build()
 
-            complicationText to contentDescription
+                complicationText to contentDescription
+            }
         } else {
             val complicationText = PlainComplicationText.Builder(text = "Set").build()
             val contentDescription = PlainComplicationText.Builder(text = "Timer is not set").build()
