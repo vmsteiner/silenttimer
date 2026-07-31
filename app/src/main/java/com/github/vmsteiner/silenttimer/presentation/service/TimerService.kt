@@ -1,5 +1,4 @@
 package com.github.vmsteiner.silenttimer.presentation.service
-
 import android.app.AlarmManager
 import android.app.Notification
 import android.app.PendingIntent
@@ -196,7 +195,7 @@ class TimerService: Service(){
      * Schedules exact alarms for the halfway point and completion.
      */
     private fun scheduleAlarms(durationMillis: Long) {
-        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
         val endTime = SystemClock.elapsedRealtime() + durationMillis
         val halfwayTime = SystemClock.elapsedRealtime() + (durationMillis / 2)
 
@@ -218,7 +217,7 @@ class TimerService: Service(){
     }
 
     private fun cancelAlarms() {
-        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
         listOf(1 to TimerReceiver.ACTION_FINISH, 2 to TimerReceiver.ACTION_HALFTIME).forEach { (id, action) ->
             PendingIntent.getBroadcast(
                 this, id, createTimerIntent(action),
