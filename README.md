@@ -84,6 +84,7 @@ The sideloading guide below is based on a Pixel Watch 2 running Wear OS 5.1 and 
 ```
 📦 silenttimer
 ┣ 📂 presentation
+┃ ┣ 📂 receiver          # Broadcast receivers for timer events
 ┃ ┣ 📂 service           # Timer and complication services
 ┃ ┣ 📂 theme             # App-wide theming and styles
 ┃ ┣ 📂 ui                # UI Screens (Timer Setup, Timer Display)
@@ -129,6 +130,10 @@ Handles **screen navigation** using `SwipeDismissableNavHost`. Automatically swi
 - Provides a **Wear OS complication** for the countdown timer.
 - Displays **remaining time** directly on supported watch faces.
 
+### **🔹 `TimerReceiver.kt`**
+- Receives **broadcast intents** for timer events (halftime and finish).
+- Starts the `TimerService` to handle the events.
+
 ### **🔹 `TimerManager.kt`**
 - A **singleton** that manages the timer's lifecycle (start/stop).
 - Exposes the timer state via a `StateFlow` for reactive UI updates across the app and complications.
@@ -146,7 +151,7 @@ Handles **screen navigation** using `SwipeDismissableNavHost`. Automatically swi
 ### **🔹 `Settings.kt`**
 - Manages application-level **settings** using Jetpack DataStore.
 
-### **🔹 `SilentTimerTheme.kt`**
+### **🔹 `Theme.kt`**
 - Defines the **Wear OS Material Theme** for consistent styling.
 
 ### **🔹 `AndroidManifest.xml`**
