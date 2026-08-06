@@ -19,7 +19,7 @@ wanted in my timer app:
 - Ambient mode: See the countdown when the watch is in ambient mode.
 
 ## **🔧 Supported Versions**
-The app currently supports Wear OS 4.0 and above, with Wear OS 5.1 as its main target.
+The app currently supports Wear OS 4.0 and above.
 
 ## **📸 Screenshots**
 ### Timer setup
