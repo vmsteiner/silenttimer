@@ -1,10 +1,8 @@
 package com.github.vmsteiner.silenttimer.presentation.service
 
-import android.app.ActivityOptions
 import android.app.PendingIntent
 import android.content.Intent
 import android.graphics.drawable.Icon
-import android.os.Build
 import android.util.Log
 import androidx.wear.watchface.complications.data.ComplicationData
 import androidx.wear.watchface.complications.data.ComplicationText
@@ -178,35 +176,17 @@ class TimerComplicationDataSourceService : SuspendingComplicationDataSourceServi
     /**
      * Creates a PendingIntent for the complication tap action to open the main activity.
      *
-     * This method configures [ActivityOptions] to handle background activity start restrictions
-     * introduced in Android 14 (UPSIDE_DOWN_CAKE) and Android 15 (BAKLAVA).
-     *
      * @return A [PendingIntent] for launching [MainActivity].
      */
     private fun createComplicationTapAction(): PendingIntent {
-
-        // Check for API level 36+
-        val activityOptions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) {
-            ActivityOptions.makeBasic().apply {
-                // Avoid BAL activity warning
-                // https://developer.android.com/guide/components/activities/background-starts#exceptions
-                pendingIntentCreatorBackgroundActivityStartMode = ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOW_ALWAYS
-            }.toBundle()
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            ActivityOptions.makeBasic().apply {
-                pendingIntentCreatorBackgroundActivityStartMode = ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
-            }.toBundle()
-        }
-        else {
-            null // API < 34, so no activityOptions
-        }
-
+        // No ActivityOptions (e.g. pendingIntentCreatorBackgroundActivityStartMode) are needed here.
+        // This PendingIntent is launched from an explicit user tap on the notification, which is an
+        // allowed background activity launch and does not require BAL opt-in.
         return PendingIntent.getActivity(
             this,
             1,
             Intent(this, MainActivity::class.java),
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-            activityOptions
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
     }
 
