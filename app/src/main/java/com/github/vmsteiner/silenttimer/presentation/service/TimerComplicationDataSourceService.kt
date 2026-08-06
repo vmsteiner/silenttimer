@@ -10,10 +10,8 @@ import androidx.wear.watchface.complications.data.ComplicationData
 import androidx.wear.watchface.complications.data.ComplicationText
 import androidx.wear.watchface.complications.data.ComplicationType
 import androidx.wear.watchface.complications.data.CountDownTimeReference
-import androidx.wear.watchface.complications.data.LongTextComplicationData
 import androidx.wear.watchface.complications.data.MonochromaticImage
 import androidx.wear.watchface.complications.data.PlainComplicationText
-import androidx.wear.watchface.complications.data.RangedValueComplicationData
 import androidx.wear.watchface.complications.data.ShortTextComplicationData
 import androidx.wear.watchface.complications.data.TimeDifferenceComplicationText
 import androidx.wear.watchface.complications.data.TimeDifferenceStyle
@@ -62,17 +60,15 @@ class TimerComplicationDataSourceService : SuspendingComplicationDataSourceServi
     }
 
     /**
-     * Provides static preview data for complications in the editor UI.
+     * Provides static preview data for the short text complication in the editor UI.
      *
      * @param type The type of complication for which preview data is requested.
-     * @return A [ComplicationData] object containing preview data.
+     * @return A [ComplicationData] object containing preview data for SHORT_TEXT,
+     *         or throws IllegalArgumentException for unsupported types.
      */
     override fun getPreviewData(type: ComplicationType): ComplicationData {
         val previewTextShort = PlainComplicationText.Builder(
             text = "04:32"
-        ).build()
-        val previewTextLong = PlainComplicationText.Builder(
-            text = "04:32:25"
         ).build()
         val contentDescription = PlainComplicationText.Builder(
             text = "Countdown remaining time: 04:32:25"
@@ -86,23 +82,6 @@ class TimerComplicationDataSourceService : SuspendingComplicationDataSourceServi
                 .setTapAction(null)
                 .build()
 
-            ComplicationType.LONG_TEXT -> LongTextComplicationData.Builder(
-                text = previewTextLong,
-                contentDescription = contentDescription
-            )
-                .setTapAction(null)
-                .build()
-
-            ComplicationType.RANGED_VALUE -> RangedValueComplicationData.Builder(
-                value = 50f, // Example value
-                min = 0f,
-                max = 100f, // Example max value
-                contentDescription = contentDescription
-            )
-                .setText(previewTextShort)
-                .setTapAction(null)
-                .build()
-
             else -> throw IllegalArgumentException("Unsupported complication type: $type")
         }
     }
@@ -111,26 +90,27 @@ class TimerComplicationDataSourceService : SuspendingComplicationDataSourceServi
      * Creates ComplicationData for the given ComplicationType.
      *
      * This function determines the appropriate complication data based on the current
-     * state of the timer (active or inactive). It builds the necessary text,
+     * state of the timer (running, finished, or inactive). It builds the necessary text,
      * content description, and monochromatic image, and then constructs the final
-     * ComplicationData object.
+     * ComplicationData object using [buildComplicationData].
      *
      * @param complicationType The type of complication for which to create data.
-     *                         This determines the shape and size of the complication.
+     *                         Currently, only [ComplicationType.SHORT_TEXT] is supported.
      * @return ComplicationData for the specified type, or null if no data can be
-     *         created for the given type.
+     *         created or if the type is unsupported.
      *
-     *         When the timer is active, the complication will display a countdown
-     *         time remaining using TimeDifferenceComplicationText, styled as a
-     *         stopwatch. The content description will indicate "Countdown ongoing."
-     *         The monochromatic image will be an hourglass icon.
+     *         When the timer is active and has time remaining, the complication will
+     *         display a countdown using [TimeDifferenceComplicationText], styled as a
+     *         stopwatch. The content description will be "Countdown ongoing."
+     *
+     *         When the timer is active but has reached zero, the complication will
+     *         display "00:00" with a "Timer finished" content description.
      *
      *         When the timer is not active, the complication will display the text
-     *         "Set" using PlainComplicationText. The content description will indicate
-     *         "Timer is not set." The monochromatic image will still be an hourglass icon.
+     *         "Set" with a "Timer is not set" content description.
      *
-     *         The complication text and content description are generated dynamically
-     *         based on the timer's state. The monochromatic image is currently static.
+     *         The monochromatic image (baseline_hourglass_empty_lightgray_24) is
+     *         currently static across all states.
      */
     private fun createComplicationData(complicationType: ComplicationType): ComplicationData? {
         val monochromaticImage = MonochromaticImage.Builder(
@@ -168,11 +148,13 @@ class TimerComplicationDataSourceService : SuspendingComplicationDataSourceServi
     /**
      * Builds a [ComplicationData] object for the given type and values.
      *
+     * Currently supports only [ComplicationType.SHORT_TEXT].
+     *
      * @param complicationType The type of complication being requested.
      * @param complicationText The main text for the complication.
      * @param contentDescription The content description for accessibility.
      * @param monochromaticImage The monochromatic image to display.
-     * @return A [ComplicationData] object or null if the type is unsupported.
+     * @return A [ComplicationData] object (ShortTextComplicationData) or null if the type is unsupported.
      */
     private fun buildComplicationData(
         complicationType: ComplicationType,
@@ -195,6 +177,9 @@ class TimerComplicationDataSourceService : SuspendingComplicationDataSourceServi
 
     /**
      * Creates a PendingIntent for the complication tap action to open the main activity.
+     *
+     * This method configures [ActivityOptions] to handle background activity start restrictions
+     * introduced in Android 14 (UPSIDE_DOWN_CAKE) and Android 15 (BAKLAVA).
      *
      * @return A [PendingIntent] for launching [MainActivity].
      */
