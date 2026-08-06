@@ -36,8 +36,9 @@ import java.util.concurrent.TimeUnit
 
 /**
  * TimerService is a foreground service that handles the countdown timer.
- * It starts, manages, and stops the timer while ensuring that the device does not enter sleep mode.
- * Additionally, it updates complications and vibrates at specific points in the countdown.
+ * It starts, manages, and stops the timer while ensuring the application remains active
+ * as a foreground process. Additionally, it updates complications and vibrates at
+ * specific points in the countdown.
  */
 class TimerService: Service(){
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -248,11 +249,12 @@ class TimerService: Service(){
     }
 
     /**
-     * Triggers a long vibration when the timer ends.
+     * Triggers a vibration pattern when the timer ends.
      */
     private fun vibrate() {
         val vibratorManager = getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager
-        val vibrator = vibratorManager.defaultVibrator// Vibrate for 500ms, pause for 500ms, repeat indefinitely
+        val vibrator = vibratorManager.defaultVibrator
+        // Pattern: 0ms delay, 500ms ON, 500ms OFF, 500ms ON. Repeats from index 0.
         val pattern = longArrayOf(0, 500, 500, 500)
         val vibrationEffect = VibrationEffect.createWaveform(pattern, 0) // 0 means repeat indefinitely
         vibrator.vibrate(vibrationEffect)
@@ -265,7 +267,7 @@ class TimerService: Service(){
         val vibratorManager = getSystemService(VIBRATOR_MANAGER_SERVICE) as VibratorManager
         val vibrator = vibratorManager.defaultVibrator
 
-        // Define a single, short vibration (e.g., 200ms)
+        // Define a single, short vibration (400ms)
         val vibrationDuration = 400L // Adjust the duration as needed
 
         // Create a one-time vibration effect
